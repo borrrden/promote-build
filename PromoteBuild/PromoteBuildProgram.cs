@@ -40,8 +40,8 @@ namespace PromoteBuild
         [HelpHook, ArgShortcut("-?"), ArgDescription("Shows this help")]
         public bool Help { get; set; }
 
-        [ArgActionMethod, ArgDescription("Overwrites the version of DLLs in the specified nupkg with a new one")]
-        [ArgExample("[mono] PromoteBuild.exe set -v 1.3.0 -f Couchbase.Lite.1.3.0-build0100.nupkg", "Changes the version (1.3.0-build0100) of the nupkg to 1.3.0")]
+        [ArgActionMethod, ArgDescription("Overwrites the version of DLLs in the nupkg files in the specified directory with a new one")]
+        [ArgExample("[mono] PromoteBuild.exe set -v 1.3.0 -d /path/to/files", "Changes the version of the nupkg files in the directory to 1.3.0")]
         public void Set(SetVersionArgs args)
         {
             if (Directory.Exists(_tempPath))
@@ -52,7 +52,7 @@ namespace PromoteBuild
             Directory.CreateDirectory(_tempPath);
             try
             {
-                foreach (var nupkg in Directory.EnumerateFiles(args.Directory))
+                foreach (var nupkg in Directory.EnumerateFiles(args.Directory, "*.nupkg"))
                 {
                     var extractPath = Path.Combine(_tempPath, Path.GetFileNameWithoutExtension(nupkg));
                     Directory.CreateDirectory(extractPath);
