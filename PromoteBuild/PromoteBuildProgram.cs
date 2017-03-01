@@ -19,15 +19,12 @@
 // limitations under the License.
 //
 using System;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
+
 using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.Zip;
-using Mono.Cecil;
 using PowerArgs;
 
 namespace PromoteBuild
@@ -70,95 +67,22 @@ namespace PromoteBuild
             }
         }
 
-        [ArgActionMethod, ArgDescription("Verifies the version of the DLLs inside the nupkg in the specified directory")]
-        [ArgExample("[mono] PromoteBuild.exe verify -f Couchbase.Lite.1.3.0-build0100.nupkg", "Outputs the version of the dlls inside of Couchbase.Lite-build0100.nupkg")]
-        [ArgExample("[mono] PromoteBuild.exe verify -v 1.3.0 -f Couchbase.Lite.1.3.0-build0100.nupkg", "Ensures that the version of the dlls in Couchbase.Lite-build0100.nupkg is 1.3.0")]
-        public void Verify(VerifyVersionArgs args)
-        {
-            if (Directory.Exists(_tempPath))
-            {
-                Directory.Delete(_tempPath, true);
-            }
-
-            Directory.CreateDirectory(_tempPath);
-            try
-            {
-                ExtractZip(args.Filename, _tempPath);
-                var libsPath = Path.Combine(_tempPath, "lib");
-                foreach (var d in Directory.EnumerateDirectories(libsPath))
-                {
-                    foreach (var f in Directory.EnumerateFiles(d, "Couchbase*.dll"))
-                    {
-                        var assembly = AssemblyDefinition.ReadAssembly(f);
-                        var recordedVersion = assembly.CustomAttributes.First(x => x.AttributeType.Name == typeof(AssemblyInformationalVersionAttribute).Name).ConstructorArguments.First().Value;
-                        Console.Write($"{f} -> {recordedVersion} ");
-                        if (args.Version != null)
-                        {
-                            Console.Write(recordedVersion.Equals(args.Version) ? "matches " : "DOES NOT match ");
-                            Console.Write($"{args.Version}");
-                        }
-                        Console.WriteLine();
-                    }
-                }
-            }
-            finally
-            {
-                Directory.Delete(_tempPath, true);
-            }
-        }
-
         private static void ProcessNupkg(string directory, string version, string outputDir)
         {
             var nuspecPath = Directory.EnumerateFiles(directory, "*.nuspec").First();
-            CorrectNuspec(nuspecPath, version);
+            var oldVersion = CorrectNuspec(nuspecPath, version);
             var libsPath = Path.Combine(directory, "lib");
-            var oldVersion = default(string);
-
-            foreach (var d in Directory.EnumerateDirectories(libsPath))
-            {
-                var readerParams = new ReaderParameters
-                {
-                    AssemblyResolver = new RelativeAssemblyResolver(_tempPath, d.Split('/').Last())
-                };
-
-                foreach (var f in Directory.EnumerateFiles(d, "Couchbase*.dll"))
-                {
-                    var assembly = AssemblyDefinition.ReadAssembly(f, readerParams);
-                    var recordedVersionAttribute = assembly.CustomAttributes.First(x => x.AttributeType.Name == typeof(AssemblyInformationalVersionAttribute).Name);
-                    oldVersion = recordedVersionAttribute.ConstructorArguments.First().Value as string;
-                    assembly.CustomAttributes.Remove(recordedVersionAttribute);
-                    var newVersionAttribute = assembly.MainModule.Import(typeof(AssemblyInformationalVersionAttribute).GetConstructor(new[] { typeof(string) }));
-                    var custom = new CustomAttribute(newVersionAttribute);
-                    custom.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.String, version));
-                    assembly.CustomAttributes.Add(custom);
-                    assembly.Write(f);
-                    RewriteWin32Res(f, oldVersion, version);
-                    Console.WriteLine($"Processed {f}");
-                }
-            }
-
-            var newFilename = $"{directory.Split('/').Last().Replace(oldVersion, version)}.nupkg";
+            var newFilename = $"{directory.Split(Path.DirectorySeparatorChar).Last().Replace(oldVersion, version)}.nupkg";
             CreateZip(directory, Path.Combine(outputDir, newFilename));
         }
 
-        private static void RewriteWin32Res(string filename, string oldVersion, string newVersion)
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "edit-win32.sh",
-                UseShellExecute = false,
-                Arguments = $"{filename} {oldVersion} {newVersion}"
-            };
-            var proc = Process.Start(psi);
-            proc.WaitForExit();
-        }
-
-        private static void CorrectNuspec(string sourceFile, string newVersion)
+        private static string CorrectNuspec(string sourceFile, string newVersion)
         {
             var text = File.ReadAllText(sourceFile);
             var oldVersion = Regex.Match(text, "<version>(.*?)</version>").Groups[1].Value;
             text = text.Replace(oldVersion, newVersion);
             File.WriteAllText(sourceFile, text);
+            return oldVersion;
         }
 
         private static void ExtractZip(string sourceFile, string targetDirectory)
@@ -245,15 +169,6 @@ namespace PromoteBuild
 
         [ArgRequired(PromptIfMissing = true), ArgShortcut("-d")]
         public string Directory { get; set; }
-    }
-
-    public class VerifyVersionArgs
-    {
-        [ArgShortcut("-v")]
-        public string Version { get; set; }
-
-        [ArgRequired(PromptIfMissing = true), ArgShortcut("-f")]
-        public string Filename { get; set; }
     }
 }
 
