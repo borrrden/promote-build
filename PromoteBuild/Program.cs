@@ -28,7 +28,6 @@ namespace PromoteBuild
         public static void Main(string[] args)
         {
             Args.InvokeAction<PromoteBuildProgram>(args);
-            Console.ReadKey(true);
         }
     }
 }
