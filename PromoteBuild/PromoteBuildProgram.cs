@@ -37,6 +37,9 @@ namespace PromoteBuild
         [HelpHook, ArgShortcut("-?"), ArgDescription("Shows this help")]
         public bool Help { get; set; }
 
+        [ArgShortcut("-symbols"), ArgDescription("Create separate symbols package"), ArgDefaultValue(false)]
+        public bool CreateSymbols { get; set; }
+
         [ArgActionMethod, ArgDescription("Overwrites the version of DLLs in the nupkg files in the specified directory with a new one")]
         [ArgExample("[mono] PromoteBuild.exe set -v 1.3.0 -d /path/to/files", "Changes the version of the nupkg files in the directory to 1.3.0")]
         public void Set(SetVersionArgs args)
@@ -53,7 +56,12 @@ namespace PromoteBuild
                 {
                     var extractPath = Path.Combine(_tempPath, Path.GetFileNameWithoutExtension(nupkg));
                     Directory.CreateDirectory(extractPath);
-                    ExtractZip(nupkg, extractPath);
+                    if (CreateSymbols) {
+                        ExtractZip(nupkg, extractPath, false);
+                        ExtractZip(nupkg, extractPath + "-symbols", true);
+                    } else {
+                        ExtractZip(nupkg, extractPath, true);
+                    }
                 }
 
                 foreach (var extractPath in Directory.EnumerateDirectories(_tempPath))
@@ -69,10 +77,11 @@ namespace PromoteBuild
 
         private static void ProcessNupkg(string directory, string version, string outputDir)
         {
+            var isSymbol = directory.EndsWith("-symbols");
             var nuspecPath = Directory.EnumerateFiles(directory, "*.nuspec").First();
             var oldVersion = CorrectNuspec(nuspecPath, version);
-            var libsPath = Path.Combine(directory, "lib");
-            var newFilename = $"{directory.Split(Path.DirectorySeparatorChar).Last().Replace(oldVersion, version)}.nupkg";
+            var newFilename = isSymbol ? $"{directory.Split(Path.DirectorySeparatorChar).Last().Replace(oldVersion, version).Replace("-symbols","")}.symbols.nupkg" :
+                $"{directory.Split(Path.DirectorySeparatorChar).Last().Replace(oldVersion, version)}.nupkg";
             CreateZip(directory, Path.Combine(outputDir, newFilename));
         }
 
@@ -85,7 +94,7 @@ namespace PromoteBuild
             return oldVersion;
         }
 
-        private static void ExtractZip(string sourceFile, string targetDirectory)
+        private static void ExtractZip(string sourceFile, string targetDirectory, bool includeSource)
         {
             using (var zipFile = new ZipFile(sourceFile))
             {
@@ -104,9 +113,21 @@ namespace PromoteBuild
                     var zipStream = zipFile.GetInputStream(zipEntry);
                     var buffer = new byte[4096];
 
+                    var fileExtension = Path.GetExtension(unzipPath);
+                    if (!includeSource && (fileExtension == ".pdb" || fileExtension == ".cs")) {
+                        continue;
+                    }
+
                     using (var unzippedFileStream = File.Create(unzipPath))
                     {
                         StreamUtils.Copy(zipStream, unzippedFileStream, buffer);
+                    }
+                }
+
+                if (!includeSource) {
+                    var srcDirectory = Path.Combine(targetDirectory, "src");
+                    if (Directory.Exists(srcDirectory)) {
+                        Directory.Delete(srcDirectory, true);
                     }
                 }
             }
