@@ -101,6 +101,10 @@ namespace PromoteBuild
                 foreach (var zipEntry in zipFile.OfType<ZipEntry>())
                 {
                     var unzipPath = Path.Combine(targetDirectory, zipEntry.Name);
+                    if (unzipPath.EndsWith("/")) {
+                        continue; // Store directory entry (will be created later)
+                    }
+
                     var directoryPath = Path.GetDirectoryName(unzipPath);
 
                     // create directory if needed
