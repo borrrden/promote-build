@@ -45,7 +45,7 @@ if($Push) {
 
     foreach($file in (Get-ChildItem $pwd -Filter *.nupkg)) {
         if($Prerelease) {
-            $NugetUrl = "http://mobile.nuget.couchbase.com/nuget/Internal"
+            $NugetUrl = "http://mobile.nuget.couchbase.com/nuget/Developer"
         } else {
             $NugetUrl = "https://api.nuget.org/v3/index.json"
         }
