@@ -50,6 +50,6 @@ if($Push) {
             $NugetUrl = "https://api.nuget.org/v3/index.json"
         }
 
-        & nuget.exe push $file 
+        & nuget.exe push $file -ApiKey $NugetApiKey -Source $NugetUrl
     }
 }
