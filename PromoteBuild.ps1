@@ -4,7 +4,6 @@ param(
     [string]$ReleaseNotes,
     [string]$NugetApiKey,
     [switch]$Push,
-    [switch]$Download,
     [switch]$Prerelease
 )
 
@@ -32,7 +31,16 @@ if($ReleaseNotes) {
     $ReleaseNotes = Resolve-Path -Path $ReleaseNotes
 }
 
-if($Download) {
+$Version1 = $InVersion.StartsWith("1")
+if($Version1) {
+    Remove-Item -Force *.nupkg -ErrorAction Ignore
+    $buildlessVersion = $InVersion.Split("-")[0]
+    $package_names = "Couchbase.Lite","Couchbase.Lite.Listener","Couchbase.Lite.Listener.Bonjour","Couchbase.Lite.Storage.CustomSQLite","Couchbase.Lite.Storage.SQLCipher","Couchbase.Lite.Storage.ForestDB","Couchbase.Lite.Storage.SystemSQLite"
+    foreach($package in $package_names) {
+        Write-Host "Downloading http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-net/1.4.1.1/116/$package.$InVersion.nupkg"
+        Invoke-WebRequest "http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-net/1.4.1.1/116/$package.$InVersion.nupkg" -Out "${package}.${InVersion}.nupkg"
+    }
+} else {
     Remove-Item -Force *.nupkg -ErrorAction Ignore
     $package_names = "Couchbase.Lite","Couchbase.Lite.Support.UWP","Couchbase.Lite.Support.NetDesktop","Couchbase.Lite.Support.Android","Couchbase.Lite.Support.iOS","Couchbase.Lite.Enterprise","Couchbase.Lite.Enterprise.Support.UWP","Couchbase.Lite.Enterprise.Support.NetDesktop"
     foreach($package in $package_names) {
