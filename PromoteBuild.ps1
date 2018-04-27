@@ -43,7 +43,7 @@ try {
             Invoke-WebRequest "http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-net/$buildlessVersion/$numericBuildNumber/$package.$InVersion.nupkg" -Out "${package}.${InVersion}.nupkg"
         }
     } else {
-        $package_names = "Couchbase.Lite.Enterprise.Support.NetDesktop"
+        $package_names = "Couchbase.Lite","Couchbase.Lite.Enterprise","Couchbase.Lite.Support.Android","Couchbase.Lite.Support.iOS","Couchbase.Lite.Support.NetDesktop","Couchbase.Lite.Support.UWP","Couchbase.Lite.Enterprise.Support.Android","Couchbase.Lite.Enterprise.Support.iOS","Couchbase.Lite.Enterprise.Support.NetDesktop","Couchbase.Lite.Enterprise.Support.UWP"
         foreach($package in $package_names) {
             Write-Host "Downloading http://mobile.nuget.couchbase.com/nuget/Internal/package/$package/$InVersion..."
             Invoke-WebRequest http://mobile.nuget.couchbase.com/nuget/Internal/package/$package/$InVersion -Out "${package}.${InVersion}.nupkg"
