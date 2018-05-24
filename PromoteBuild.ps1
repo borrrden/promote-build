@@ -1,6 +1,35 @@
+<#
+.SYNOPSIS
+    A tool for changing the version, and release notes, of a given version of the Couchbase Lite nuget packages
+.DESCRIPTION
+    This tool will unzip the package, change the nuget version and release notes, then repackage and optionally
+    push to either Couchbase internal feed or Nuget
+.PARAMETER InVersion
+    The existing version of the library to modify
+.PARAMETER OutVersion
+    The version to modify the library to
+.PARAMETER ReleaseNotes
+    If supplied, the new release notes will be read from the specified file and replaced in the package metadata
+.PARAMETER NugetApiKey
+    The key to use when pushing to the nuget feed, if Push is specified
+.PARAMETER Push
+    If specified, will attempt to push to the specified nuget feed (either internal via Prerelease, or to nuget.org by default)
+.PARAMETER Prerelease
+    If specified, will push to Couchbase's internal feed
+.EXAMPLE
+    C:\PS> .\PromoteBuild.ps1 -InVersion 2.0.0-b0001 -OutVersion 2.0.0-db001
+    Changes the version of the library from 2.0.0-b0001 to 2.0.0-db001
+.EXAMPLE
+    C:\PS> .\PromoteBuild.ps1 -InVersion 2.0.0-b0001 -OutVersion 2.0.0-db001 -Push -Prerelease -NugetApiKey <key>
+    Changes the version of the library from 2.0.0-b0001 to 2.0.0-db001, and pushes to Couchbase's internal feed
+.EXAMPLE
+    C:\PS> .\PromoteBuild.ps1 -InVersion 2.0.0-b0001 -OutVersion 2.0.0 -Push -NugetApiKey <key> -ReleaseNotes notes.txt
+    Changes the version of the library from 2.0.0-b0001 to 2.0.0, modifies the release notes to contain the content in notes.txt
+    and pushes to nuget.org
+#>
 param(
-    [Parameter(Mandatory=$true)][string]$InVersion,
-    [Parameter(Mandatory=$true)][string]$OutVersion,
+    [Parameter(Mandatory=$true, ParameterSetName="Version", HelpMessage="The existing version of the library to modify")][string]$InVersion,
+    [Parameter(Mandatory=$true, ParameterSetName="Version", HelpMessage="The version to modify the library to")][string]$OutVersion,
     [string]$ReleaseNotes,
     [string]$NugetApiKey,
     [switch]$Push,
@@ -40,13 +69,13 @@ try {
         $package_names = "Couchbase.Lite","Couchbase.Lite.Listener","Couchbase.Lite.Listener.Bonjour","Couchbase.Lite.Storage.CustomSQLite","Couchbase.Lite.Storage.SQLCipher","Couchbase.Lite.Storage.ForestDB","Couchbase.Lite.Storage.SystemSQLite"
         foreach($package in $package_names) {
             Write-Host "Downloading http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-net/$buildlessVersion/$numericBuildNumber/$package.$InVersion.nupkg"
-            Invoke-WebRequest "http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-net/$buildlessVersion/$numericBuildNumber/$package.$InVersion.nupkg" -Out "${package}.${InVersion}.nupkg"
+            Invoke-WebRequest "http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-net/$buildlessVersion/$numericBuildNumber/$package.$InVersion.nupkg" -OutFile "${package}.${InVersion}.nupkg"
         }
     } else {
         $package_names = "Couchbase.Lite","Couchbase.Lite.Enterprise","Couchbase.Lite.Support.Android","Couchbase.Lite.Support.iOS","Couchbase.Lite.Support.NetDesktop","Couchbase.Lite.Support.UWP","Couchbase.Lite.Enterprise.Support.Android","Couchbase.Lite.Enterprise.Support.iOS","Couchbase.Lite.Enterprise.Support.NetDesktop","Couchbase.Lite.Enterprise.Support.UWP"
         foreach($package in $package_names) {
             Write-Host "Downloading http://mobile.nuget.couchbase.com/nuget/Internal/package/$package/$InVersion..."
-            Invoke-WebRequest http://mobile.nuget.couchbase.com/nuget/Internal/package/$package/$InVersion -Out "${package}.${InVersion}.nupkg"
+            Invoke-WebRequest http://mobile.nuget.couchbase.com/nuget/Internal/package/$package/$InVersion -OutFile "${package}.${InVersion}.nupkg"
         }
     }
 
