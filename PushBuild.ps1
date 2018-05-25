@@ -1,4 +1,28 @@
-﻿[CmdletBinding(DefaultParameterSetName='set2')]
+﻿<#
+.SYNOPSIS
+    A tool for pushing Couchbase Lite nuget packages to either Nuget or the internal Couchbase feed
+.DESCRIPTION
+    This tool will optionally download the nuget packages from S3, and then push them all to the specified
+    nuget feed
+.PARAMETER Version
+    The version of the library to download from S3 (required unless Prerelease)
+.PARAMETER AccessKey
+    The AWS access key (required unless Prerelease)
+.PARAMETER SecretKey
+    The AWS secret key (required unless Prerelease)
+.PARAMETER Prerelease
+    If specified, the packages will be assumed to be already downloaded and ready for upload.
+    They will be uploaded to the internal Couchbase feed
+.PARAMETER NugetApiKey
+    The API key for pushing to the Nuget feed (always required)
+.EXAMPLE
+    C:\PS> .\PushBuild.ps1 -Version 2.0.0 -AccessKey <key> -SecretKey <key> -NugetApiKey <key>
+    Pushes the official 2.0.0 packages to nuget.org
+.EXAMPLE
+    C:\PS> .\PromoteBuild.ps1 -Prerelease -NugetApiKey <key>
+    Pushes a developer build to the internal Couchbase feed
+#>
+[CmdletBinding(DefaultParameterSetName='set2')]
 param(
     [Parameter(ParameterSetName='set2', Mandatory=$true, HelpMessage="The version to download from S3")][string]$Version,
     [Parameter(ParameterSetName='set2', Mandatory=$true, HelpMessage="The access key of the AWS credentials")][string]$AccessKey,
@@ -29,5 +53,5 @@ foreach($file in (Get-ChildItem $pwd -Filter *.nupkg)) {
     }
 
     Write-Host "Pushing $file..."
-    #& nuget.exe push $file -ApiKey $NugetApiKey -Source $NugetUrl
+    & nuget.exe push $file -ApiKey $NugetApiKey -Source $NugetUrl
 }
