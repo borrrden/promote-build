@@ -15,6 +15,8 @@
     They will be uploaded to the internal Couchbase feed
 .PARAMETER NugetApiKey
     The API key for pushing to the Nuget feed (always required)
+.PARAMETER DryRun
+    Perform all steps except for the actual Nuget feed push
 .EXAMPLE
     C:\PS> .\PushBuild.ps1 -Version 2.0.0 -AccessKey <key> -SecretKey <key> -NugetApiKey <key>
     Pushes the official 2.0.0 packages to nuget.org
@@ -29,7 +31,8 @@ param(
     [Parameter(ParameterSetName='set2', Mandatory=$true, HelpMessage="The secret key of the AWS credentials")][string]$SecretKey,
     [Parameter(ParameterSetName='set1')][switch]$Prerelease,
     [Parameter(ParameterSetName='set2', Mandatory=$true, HelpMessage="The API key for pushing to the Nuget feed")]
-    [Parameter(ParameterSetName='set1', Mandatory=$true, HelpMessage="The API key for pushing to the Nuget feed")][string]$NugetApiKey
+    [Parameter(ParameterSetName='set1', Mandatory=$true, HelpMessage="The API key for pushing to the Nuget feed")][string]$NugetApiKey,
+    [Parameter(ParameterSetName='set2')][switch]$DryRun
 )
 
   
@@ -41,7 +44,7 @@ if(-Not $Prerelease) {
     $NugetUrl = "http://mobile.nuget.couchbase.com/nuget/Developer"
 }
 
-if(![System.IO.File]::Exists("nuget.exe")) {
+if(![System.IO.File]::Exists("nuget.exe") -and -not $DryRun) {
     Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile nuget.exe
 }
 
@@ -52,6 +55,9 @@ foreach($file in (Get-ChildItem $pwd -Filter *.nupkg)) {
         $NugetUrl = "https://api.nuget.org/v3/index.json"
     }
 
-    Write-Host "Pushing $file..."
-    & nuget.exe push $file -ApiKey $NugetApiKey -Source $NugetUrl
+    if($DryRun) {
+        Write-Host "DryRun specified, skipping push for $file"
+    } else {
+        & nuget.exe push $file -ApiKey $NugetApiKey -Source $NugetUrl
+    }
 }
