@@ -44,7 +44,7 @@ if(-Not $Prerelease) {
     $NugetUrl = "http://mobile.nuget.couchbase.com/nuget/Developer"
 }
 
-if(![System.IO.File]::Exists("nuget.exe") -and -not $DryRun) {
+if(-Not $(Test-Path .\nuget.exe) -and -not $DryRun) {
     Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile nuget.exe
 }
 
