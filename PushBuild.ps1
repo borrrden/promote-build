@@ -38,7 +38,7 @@ param(
   
 if(-Not $Prerelease) {
     Write-Host "Prelease not specified, downloading packages from S3..."
-    Read-S3Object -BucketName packages.couchbase.com -KeyPrefix releases/couchbase-lite/net/$Version -Folder . -AccessKey $AccessKey -SecretKey $SecretKey
+    Read-S3Object -BucketName packages.couchbase.com -KeyPrefix releases/couchbase-lite-net/$Version -Folder . -AccessKey $AccessKey -SecretKey $SecretKey
     $NugetUrl = "https://api.nuget.org/v3/index.json"
 } else {
     $NugetUrl = "http://mobile.nuget.couchbase.com/nuget/Developer"
