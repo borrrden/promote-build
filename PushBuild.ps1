@@ -58,6 +58,6 @@ foreach($file in (Get-ChildItem $pwd -Filter *.nupkg)) {
     if($DryRun) {
         Write-Host "DryRun specified, skipping push for $file"
     } else {
-        & nuget.exe push $file -ApiKey $NugetApiKey -Source $NugetUrl
+        & .\nuget.exe push $file -ApiKey $NugetApiKey -Source $NugetUrl
     }
 }
