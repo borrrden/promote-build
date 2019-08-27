@@ -41,7 +41,7 @@ if(-Not $Prerelease) {
     Read-S3Object -BucketName packages.couchbase.com -KeyPrefix releases/couchbase-lite-net/$Version -Folder . -AccessKey $AccessKey -SecretKey $SecretKey
     $NugetUrl = "https://api.nuget.org/v3/index.json"
 } else {
-    $NugetUrl = "http://mobile.nuget.couchbase.com/nuget/Developer"
+    $NugetUrl = "http://172.23.121.218/nuget/Developer"
 }
 
 if(-Not $(Test-Path .\nuget.exe) -and -not $DryRun) {
@@ -50,7 +50,7 @@ if(-Not $(Test-Path .\nuget.exe) -and -not $DryRun) {
 
 foreach($file in (Get-ChildItem $pwd -Filter *.nupkg)) {
     if($Prerelease) {
-        $NugetUrl = "http://mobile.nuget.couchbase.com/nuget/Developer"
+        $NugetUrl = "http://172.23.121.218/nuget/Developer"
     } else {
         $NugetUrl = "https://api.nuget.org/v3/index.json"
     }
